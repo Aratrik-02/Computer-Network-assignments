@@ -66,3 +66,45 @@ int main(int argc,char* argv[]){
 	close(ss);
 	return 0;
 }
+
+//Alternate code 
+//Sender Receiver one code
+#include<stdio.h>
+#include<stdlib.h>
+#include<sys/socket.h>
+#include<sys/types.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<unistd.h>
+#include<string.h>
+
+int main(int argc){
+  struct sockaddr_in saddr;
+  int ss=socket(AF_INET,SOCK_DGRAM,0);
+  char data[1000];
+  int reuse=1;
+  saddr.sin_family=AF_INET;
+  saddr.sin_port=htons(1234);
+  if(argc>1){
+    inet_aton("172.24.15.255",&(saddr.sin_addr));
+    setsockopt(ss,SOL_SOCKET,SO_BROADCAST,&reuse,sizeof(reuse));
+    while(1){
+      printf("Enter message: ");
+      fgets(data,sizeof(data),stdin);
+      data[strlen(data)]='\0';
+      sendto(ss,&data,strlen(data)+1,0,(struct sockaddr*)&saddr,sizeof(saddr));
+      if(strncmp(data,"quit",4)==0)break;
+    }
+    close(ss);
+  }else{
+    saddr.sin_addr.s_addr=htonl(INADDR_ANY);
+    setsockopt(ss,SOL_SOCKET,SO_REUSEADDR,&reuse,sizeof(reuse));
+    bind(ss,(struct sockaddr*)&saddr,sizeof(saddr));
+    while(1){
+      recvfrom(ss,(void*)data,sizeof(data),0,NULL,0);
+      printf("Message Received: %s\n",data);
+      if(strncmp(data,"quit",4)==0)break;
+    }
+    close(ss);
+  }
+}
